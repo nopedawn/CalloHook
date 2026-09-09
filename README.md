@@ -46,12 +46,6 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-`requirements.txt`:
-
-```text
-Flask
-```
-
 ## Usage
 
 Start the webhook server:
