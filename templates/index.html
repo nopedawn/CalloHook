@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalloHook | Pentest Webhook Collector</title>
+    <meta http-equiv="refresh" content="3">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Consolas, Monaco, monospace;
+            background: #111;
+            color: #eee;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #999;
+            margin-bottom: 25px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stats {
+            color: #aaa;
+        }
+
+        button {
+            background: #222;
+            color: #eee;
+            border: 1px solid #555;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        .request {
+            background: #1b1b1b;
+            border: 1px solid #333;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .request-header {
+            background: #222;
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .method {
+            font-weight: bold;
+            color: #7ee787;
+            margin-right: 10px;
+        }
+
+        .path {
+            color: #ddd;
+            word-break: break-all;
+        }
+
+        .request-body {
+            padding: 15px;
+        }
+
+        .section {
+            margin-bottom: 18px;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 7px;
+            color: #aaa;
+        }
+
+        pre {
+            margin: 0;
+            padding: 10px;
+            background: #111;
+            border: 1px solid #2d2d2d;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            overflow-x: auto;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 50px 20px;
+            border: 1px dashed #444;
+            border-radius: 8px;
+            color: #888;
+        }
+
+        .timestamp {
+            float: right;
+            color: #888;
+        }
+
+        @media (max-width: 700px) {
+            .timestamp {
+                display: block;
+                float: none;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>CalloHook | Pentest Webhook Collector</h1>
+
+    <div class="subtitle">
+        HTTP callback collector for authorized security testing
+    </div>
+
+    <div class="topbar">
+
+        <div class="stats">
+            Total requests: {{ logs|length }}
+        </div>
+
+        <button onclick="clearLogs()">
+            Clear Logs
+        </button>
+
+    </div>
+
+    {% if logs %}
+        {% for log in logs|reverse %}
+        <div class="request">
+            <div class="request-header">
+                <span class="method">
+                    {{ log.method }}
+                </span>
+                <span class="path">
+                    {{ log.path }}
+                </span>
+                <span class="timestamp">
+                    {{ log.timestamp }}
+                </span>
+            </div>
+
+            <div class="request-body">
+                <div class="section">
+                    <div class="section-title">Source IP</div>
+                    <pre>{{ log.ip }}</pre>
+                </div>
+                {% if log.full_url %}
+                <div class="section">
+                    <div class="section-title">Full URL</div>
+                    <pre>{{ log.full_url }}</pre>
+                </div>
+                {% endif %}
+                <div class="section">
+                    <div class="section-title">
+                        Query / URLSearchParams
+                    </div>
+                    <pre>{{ log.query | tojson(indent=2) }}</pre>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Cookies</div>
+                    <pre>{{ log.cookies | tojson(indent=2) }}</pre>
+                </div>
+                <div class="section">
+                    <div class="section-title">Headers</div>
+                    <pre>{{ log.headers | tojson(indent=2) }}</pre>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Body</div>
+                    {% if log.body is mapping or log.body is sequence and log.body is not string %}
+                    <pre>{{ log.body | tojson(indent=2) }}</pre>
+                    {% else %}
+                    <pre>{{ log.body }}</pre>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty">No requests received yet.</div>
+    {% endif %}
+</div>
+
+<script>
+async function clearLogs() {
+    const confirmed = confirm(
+        "Clear all captured request logs?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            "/clear",
+            {
+                method: "POST"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to clear logs");
+        }
+
+        window.location.reload();
+
+    } catch (error) {
+        alert(
+            "Error: " + error.message
+        );
+    }
+}
+</script>
+
+</body>
+</html>
